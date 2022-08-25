@@ -24,8 +24,10 @@ class Example:
         self.out = lines[1].replace("Output:","").strip()
         if self.out == "true" or self.out == "false":
             self.out = self.out.capitalize()
-
-        self.explain = lines[2].strip()
+        try:
+            self.explain = lines[2].strip()
+        except IndexError:
+            self.explain = "No explaination"
 
     def __str__(self) -> str:
         return f"{self.inp=},{self.out=},{self.explain=}"
