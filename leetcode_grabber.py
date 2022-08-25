@@ -98,7 +98,7 @@ class Question:
 
     def solution_file_str(self) -> str:
         des = "#" + "\n\n#".join(self.description.splitlines())
-        return f"{des}\n\n{self.print_starter_code()}"
+        return f"{des}\n\nfrom typing import *\n\n{self.print_starter_code()}"
 
 
     def function(self):
