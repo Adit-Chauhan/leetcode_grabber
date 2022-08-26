@@ -13,6 +13,10 @@ import argparse
 
 IDENT = "    "
 
+class FailedParse(Exception):
+    def __init__(self, val: int) -> None:
+        self.value = val
+
 class Example:
     inp = ""
     out = ""
@@ -28,12 +32,6 @@ class Example:
             self.explain = lines[2].strip()
         except IndexError:
             self.explain = "No explaination"
-
-    def __str__(self) -> str:
-        return f"{self.inp=},{self.out=},{self.explain=}"
-
-    def __repr__(self) -> str:
-        return self.__str__()
 
 class Question:
     title = ""
@@ -51,21 +49,29 @@ class Question:
         if (div := html.find("div",{"data-cy":"question-title"})) is not None:
             self.get_title_and_number(div)
         else:
-            raise Exception("Failed to Find Question name")
+            print("Failed to parse Title or Number")
+            sys.exit(1)
 
         if (div := html.find("div",{"class":"css-10o4wqw"})) is not None:
             self.get_difficulty(div)
         else:
-            raise Exception("Failed to Find difficulty")
+            print("Failed to parse difficulty")
+            sys.exit(1)
 
         if (div:= html.find("div",{"class":"content__u3I1 question-content__JfgR"})) is not None:
             print("Collecting Description")
             self.get_description(div)
             print("Collecting examples")
             self.examples = [Example(p) for p in div.findAll("pre")]
+        else:
+            print("Failed to parse Description")
+            sys.exit(1)
 
         if (div:= html.find("div",{"class":"CodeMirror-lines"})) is not None:
             self.get_starter(div)
+        else:
+            print("Failed to parse Starter code")
+            sys.exit(1)
 
 
     def get_starter(self,div:Tag|NavigableString):
@@ -93,8 +99,13 @@ class Question:
         self.description =description.strip()
 
     def print_starter_code(self) -> str:
-        sep = f"\n{IDENT}"
-        return sep.join(self.starter)
+        i = 0
+        while "class Solution" not in self.starter[i]:
+            i += 1
+        F = "\n".join(self.starter[:i])
+
+        sep = f"\n{IDENT}".join(self.starter[i:])
+        return f"{F}\n{sep}"
 
     def solution_file_str(self) -> str:
         des = "#" + "\n\n#".join(self.description.splitlines())
@@ -102,7 +113,10 @@ class Question:
 
 
     def function(self):
-        string = self.starter[1]
+        i = 0
+        while "class Solution" not in self.starter[i]:
+            i += 1
+        string = self.starter[i+1]
         string = string.replace("def","").strip()
         string = string.replace("self, ","")
         return string
