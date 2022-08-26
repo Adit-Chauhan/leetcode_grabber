@@ -13,25 +13,22 @@ import argparse
 
 IDENT = "    "
 
-class FailedParse(Exception):
-    def __init__(self, val: int) -> None:
-        self.value = val
-
 class Example:
     inp = ""
     out = ""
-    explain = ""
+    explain = " No Explaination"
 
     def __init__(self,pre:Tag|NavigableString)->None:
         lines = pre.text.splitlines()
-        self.inp = lines[0].replace("Input:","").strip()
-        self.out = lines[1].replace("Output:","").strip()
-        if self.out == "true" or self.out == "false":
-            self.out = self.out.capitalize()
-        try:
-            self.explain = lines[2].strip()
-        except IndexError:
-            self.explain = "No explaination"
+        for line in lines:
+            if "Input:" in line:
+                self.inp = line.replace("Input:","").strip()
+            if "Output:" in line:
+                self.out = line.replace("Output:","").strip()
+                if self.out == "true" or self.out == "false":
+                    self.out = self.out.capitalize()
+            if "Explaination:" in line:
+                self.explain = line.strip()
 
 class Question:
     title = ""
@@ -124,7 +121,7 @@ class Question:
     def filename(self)->str:
         return f"{self.rating[0]}_{self.number}_{self.title.replace(' ','_')}.py"
 
-    def append_test(self):
+    def append_test(self,link = False):
         testFile = ""
         match self.rating:
             case "Easy": testFile = "test_easy.py"
@@ -132,26 +129,68 @@ class Question:
             case "Hard": testFile = "test_hard.py"
             case other: testFile = "test_hard.py"
 
+        ll_open = ""
+        ll_close = ""
+        if link:
+            ll_open = "l_2_ll("
+            ll_close = ")"
+
         with open(testFile,"a") as fp:
             func = self.function()
             lines = [f"\n\ndef test_{func[:func.find('(')]}():",f"from {self.filename()[:-3]} import Solution","sol = Solution()"]
             for example in self.examples:
-                lines.extend([f"assert sol.{func[:func.find('(')+1]}{example.inp}) == {example.out}",f"#{example.explain}"])
+                if "[" in example.out:
+                    lines.extend([f"assert sol.{func[:func.find('(')+1]}{ll_open}{example.inp}{ll_close}) == {ll_open}{example.out}{ll_close}",f"#{example.explain}"])
+                else:
+                    lines.extend([f"assert sol.{func[:func.find('(')+1]}{ll_open}{example.inp}{ll_close}) == {example.out}",f"#{example.explain}"])
             fp.write(f"\n{IDENT}".join(lines))
 
-    def make_file(self):
-        with open(self.filename(),"w") as fp:
-            fp.write(self.solution_file_str())
+    def make_file(self,link=False):
+        des = "#" + "\n\n#".join(self.description.splitlines())
+        ll = ""
+        if link:
+            ll = ll_class()
 
+
+        code = f"{des}\n\nfrom typing import *\n\n{ll}{self.print_starter_code()}"
+
+        with open(self.filename(),"w") as fp:
+            fp.write(code)
+
+def ll_class():
+    return """
+class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+
+"""
+
+def list_to_ll():
+    return """
+def l_2_ll(li):
+    head = ListNode(li.pop(0),None)
+    curr = head
+    for item in li:
+        curr.next = ListNode(item)
+        curr = curr.next
+    return head
+
+
+    """
 
 def init_files():
     def make_file(fname):
         if not os.path.exists(fname):
             with open(fname,"w") as fp:
                 fp.write("#!/usr/bin/env python3\n")
+                fp.write(ll_class())
+                fp.write(list_to_ll())
     make_file("test_easy.py")
     make_file("test_medium.py")
     make_file("test_hard.py")
+
 
 
 if __name__ == "__main__":
@@ -160,6 +199,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("url",help="Url to parse")
     parser.add_argument("--head",help="See the browser",action="store_true")
+    parser.add_argument("--link",help="if the question has linked list",action="store_true")
     args=  parser.parse_args()
     if args.head:
         dr = Firefox()
@@ -184,7 +224,7 @@ if __name__ == "__main__":
         sys.exit(1)
     q = Question(html)
     print("making Starter File")
-    q.make_file()
+    q.make_file(link=args.link)
     print("Adding tests")
-    q.append_test()
+    q.append_test(link=args.link)
     os.remove("geckodriver.log")
