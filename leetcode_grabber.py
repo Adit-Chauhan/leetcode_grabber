@@ -13,10 +13,6 @@ import argparse
 
 IDENT = "    "
 
-class FailedParse(Exception):
-    def __init__(self, val: int) -> None:
-        self.value = val
-
 class Example:
     inp = ""
     out = ""
