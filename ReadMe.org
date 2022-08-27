@@ -4,6 +4,8 @@ This is a script to automate leetcode problem on a personal machine
 This is a script that collects the question from leetcode problem url.
 Then parses it to make the starter code as well as make test cases from the examples that can be used by pytest.
 
+Note: this only works for Simple Questions with basic types, and simple inputs 
+
 * usage
 #+begin_src bash
 python leetcode_grabber.py "url"
