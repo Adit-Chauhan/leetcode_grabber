@@ -132,7 +132,7 @@ class Question:
             func = self.function()
             lines = [f"\n\ndef test_{func[:func.find('(')]}():",f"from {self.filename()[:-3]} import Solution","sol = Solution()"]
             for example in self.examples:
-                lines.extend([f"assert sol.{func[:func.find('(')+1]}{example.inp}) == {example.out}",f"#{example.explain}"])
+                lines.extend([f"print()\n{IDENT}assert sol.{func[:func.find('(')+1]}{example.inp}) == {example.out}",f"#{example.explain}"])
             fp.write(f"\n{IDENT}".join(lines))
 
     def make_file(self):
